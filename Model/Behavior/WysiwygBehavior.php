@@ -1,6 +1,6 @@
 <?php
 /**
- * OriginalKey Behavior
+ * Wysiwyg Behavior
  *
  * @author Noriko Arai <arai@nii.ac.jp>
  * @author Shohei Nakajima <nakajimashouhei@gmail.com>
@@ -10,16 +10,17 @@
  */
 
 App::uses('ModelBehavior', 'Model');
+App::uses('HtmlParse', 'Wysiwyg.Utility');
 
 /**
- * OriginalKey Behavior
+ * Wysiwyg Behavior
  *
  * @package  NetCommons\NetCommons\Model\Befavior
  * @author Shohei Nakajima <nakajimashouhei@gmail.com>
  */
 class WysiwygBehavior extends ModelBehavior {
 
-	/** wysiwig利用を行うテキストエリア */
+	/** Wysiwygを利用するテキストエリア */
 	protected $_fields = array();
 
 	const REPLACE_BASE_URL = '{{__BASE_URL__}}';
@@ -62,6 +63,20 @@ class WysiwygBehavior extends ModelBehavior {
 		}
 
 		return $results;
+	}
+
+/**
+ * Called during validation operations, before validation. Please note that custom
+ * validation rules can be defined in $validate.
+ *
+ * @param array $options Options passed from Model::save().
+ * @return bool True if validate operation should continue, false to abort
+ * @link http://book.cakephp.org/2.0/en/models/callback-methods.html#beforevalidate
+ * @see Model::save()
+ */
+	public function beforeValidate(Model $model, $options = array()) {
+		$this->purify($model);
+		return true;
 	}
 
 /**
@@ -157,5 +172,20 @@ class WysiwygBehavior extends ModelBehavior {
 		}
 
 		return $data;
+	}
+
+/**
+ * パース処理
+ * @param Model $model Model using this behavior
+ * @return boolean
+ */
+	public function purify(Model $model) {
+		$parse = new HtmlParse();
+		foreach ($this->_fields[$model->alias] as $field) {
+			if (isset($model->data[$model->alias][$field])) {
+				$model->data[$model->alias][$field] = $parse->purify($model->data[$model->alias][$field]);
+			}
+		}
+		return true;
 	}
 }
